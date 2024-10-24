@@ -322,6 +322,36 @@ def test_openai_extra_headers():
 
 
 @pytest.mark.parametrize(
+    "provider",
+    [
+        "openai",
+        "groq",
+        "azure",
+    ]
+)
+def test_max_retries(provider):
+    optional_params = litellm.utils.get_optional_params(
+        model="",
+        custom_llm_provider=provider,
+        max_retries=0,
+    )
+    assert optional_params["max_retries"] == 0
+
+
+@pytest.mark.parametrize(
+    "provider",
+    [
+        "openai",
+        "groq",
+        "azure",
+    ]
+)
+def test_supported_open_ai_params_max_retries(provider):
+    supported_params = litellm.utils.get_supported_openai_params("", provider)
+    assert "max_retries" in supported_params
+
+
+@pytest.mark.parametrize(
     "api_version",
     [
         "2024-02-01",
@@ -664,9 +694,39 @@ def test_unmapped_gemini_model_params():
     assert optional_params["stop_sequences"] == ["stop_word"]
 
 
-def test_drop_nested_params_vllm():
+def _check_additional_properties(schema):
+    if isinstance(schema, dict):
+        # Remove the 'additionalProperties' key if it exists and is set to False
+        if "additionalProperties" in schema or "strict" in schema:
+            raise ValueError(
+                "additionalProperties and strict should not be in the schema"
+            )
+
+        # Recursively process all dictionary values
+        for key, value in schema.items():
+            _check_additional_properties(value)
+
+    elif isinstance(schema, list):
+        # Recursively process all items in the list
+        for item in schema:
+            _check_additional_properties(item)
+
+    return schema
+
+
+@pytest.mark.parametrize(
+    "provider, model",
+    [
+        ("hosted_vllm", "my-vllm-model"),
+        ("gemini", "gemini-1.5-pro"),
+        ("vertex_ai", "gemini-1.5-pro"),
+    ],
+)
+def test_drop_nested_params_add_prop_and_strict(provider, model):
     """
     Relevant issue - https://github.com/BerriAI/litellm/issues/5288
+
+    Relevant issue - https://github.com/BerriAI/litellm/issues/6136
     """
     tools = [
         {
@@ -690,8 +750,8 @@ def test_drop_nested_params_vllm():
     ]
     tool_choice = {"type": "function", "function": {"name": "structure_output"}}
     optional_params = get_optional_params(
-        model="my-vllm-model",
-        custom_llm_provider="hosted_vllm",
+        model=model,
+        custom_llm_provider=provider,
         temperature=0.2,
         tools=tools,
         tool_choice=tool_choice,
@@ -700,7 +760,20 @@ def test_drop_nested_params_vllm():
             ["tools", "function", "additionalProperties"],
         ],
     )
-    print(optional_params["tools"][0]["function"])
 
-    assert "additionalProperties" not in optional_params["tools"][0]["function"]
-    assert "strict" not in optional_params["tools"][0]["function"]
+    _check_additional_properties(optional_params["tools"])
+
+
+def test_hosted_vllm_tool_param():
+    """
+    Relevant issue - https://github.com/BerriAI/litellm/issues/6228
+    """
+    optional_params = get_optional_params(
+        model="my-vllm-model",
+        custom_llm_provider="hosted_vllm",
+        temperature=0.2,
+        tools=None,
+        tool_choice=None,
+    )
+    assert "tools" not in optional_params
+    assert "tool_choice" not in optional_params

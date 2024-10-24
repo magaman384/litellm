@@ -95,6 +95,7 @@ const sidebars = {
           items: [
             "proxy/guardrails/quick_start", 
             "proxy/guardrails/aporia_api", 
+            "proxy/guardrails/guardrails_ai",
             "proxy/guardrails/lakera_ai", 
             "proxy/guardrails/bedrock",  
             "proxy/guardrails/pii_masking_v2", 
@@ -273,6 +274,7 @@ const sidebars = {
         "observability/langfuse_integration",
         "observability/gcs_bucket_integration",
         "observability/langsmith_integration",
+        "observability/literalai_integration",
         "observability/opentelemetry_integration",
         "observability/logfire_integration",
         "observability/arize_integration",
@@ -293,6 +295,7 @@ const sidebars = {
         "observability/greenscale_integration",
         "observability/supabase_integration",
         `observability/telemetry`,
+        "observability/opik_integration",
       ],
     },
     {

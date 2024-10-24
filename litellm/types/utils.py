@@ -11,6 +11,12 @@ from openai.types.completion_usage import (
     CompletionUsage,
     PromptTokensDetails,
 )
+from openai.types.moderation import (
+    Categories,
+    CategoryAppliedInputTypes,
+    CategoryScores,
+)
+from openai.types.moderation_create_response import Moderation, ModerationCreateResponse
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 from typing_extensions import Callable, Dict, Required, TypedDict, override
 
@@ -20,6 +26,7 @@ from .llms.openai import (
     ChatCompletionUsageBlock,
     OpenAIChatCompletionChunk,
 )
+from .rerank import RerankResponse
 
 
 def _generate_id():  # private helper function
@@ -129,6 +136,7 @@ class CallTypes(Enum):
     speech = "speech"
     rerank = "rerank"
     arerank = "arerank"
+    arealtime = "_arealtime"
 
 
 class PassthroughCallTypes(Enum):
@@ -810,7 +818,7 @@ class EmbeddingResponse(OpenAIObject):
         model: Optional[str] = None,
         usage: Optional[Usage] = None,
         response_ms=None,
-        data: Optional[List] = None,
+        data: Optional[Union[List, List[Embedding]]] = None,
         hidden_params=None,
         _response_headers=None,
         **params,
